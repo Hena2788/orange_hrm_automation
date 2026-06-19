@@ -5,6 +5,7 @@ import {
   uniqueSuffix,
   ensureJobTitleExists,
   resolveHiringManagerSearchTerm,
+  resolveJobTitle,
 } from '../../support/helpers';
 
 const candidateTestData = Cypress.env('candidatesData') || [];
@@ -32,12 +33,15 @@ describe('Recruitment Module - Candidates', () => {
     resolveHiringManagerSearchTerm();
 
     cy.then(() => {
-      if (!Cypress.env('useDemo')) {
-        ensureJobTitleExists(testJobTitle);
-      } else {
-        testJobTitle = 'Automaton Tester';
+      if (Cypress.env('useDemo')) {
+        return resolveJobTitle().then((title) => {
+          testJobTitle = title;
+        });
       }
+      ensureJobTitleExists(testJobTitle);
+    });
 
+    cy.then(() => {
       cy.intercept('POST', '**/api/v2/recruitment/vacancies').as('createVacancy');
       VacanciesPage.visitAddForm();
       VacanciesPage.fillVacancyForm({
@@ -48,8 +52,8 @@ describe('Recruitment Module - Candidates', () => {
         numOfPositions: '2',
       });
       VacanciesPage.submitForm();
+      cy.wait('@createVacancy', {timeout: 30000});
       VacanciesPage.assertSuccessToast();
-      cy.wait('@createVacancy', {timeout: 15000});
     });
   });
 

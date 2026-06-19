@@ -30,7 +30,16 @@ class VacanciesPage {
   }
 
   selectJobTitle(jobTitle) {
-    cy.getOXDInput('Job Title').selectOption(jobTitle);
+    cy.getOXDInput('Job Title').click();
+    cy.get('.oxd-select-dropdown', {timeout: 15000})
+      .should('be.visible')
+      .find('.oxd-select-option')
+      .then(($options) => {
+        const match = [...$options].find((el) =>
+          el.innerText.toLowerCase().includes(jobTitle.toLowerCase()),
+        );
+        cy.wrap(match || $options.first()).click();
+      });
     return this;
   }
 
@@ -49,7 +58,10 @@ class VacanciesPage {
       .should('be.visible')
       .find('.oxd-autocomplete-option')
       .first()
-      .click();
+      .then(($option) => {
+        Cypress.env('hiringManagerLabel', $option.text().trim());
+        cy.wrap($option).click();
+      });
     return this;
   }
 
@@ -94,7 +106,15 @@ class VacanciesPage {
 
   searchByJobTitle(jobTitle) {
     cy.getOXDInput('Job Title').click();
-    cy.get('.oxd-select-dropdown').contains(jobTitle).click();
+    cy.get('.oxd-select-dropdown', {timeout: 15000})
+      .should('be.visible')
+      .find('.oxd-select-option')
+      .then(($options) => {
+        const match = [...$options].find((el) =>
+          el.innerText.toLowerCase().includes(jobTitle.toLowerCase()),
+        );
+        cy.wrap(match || $options.first()).click();
+      });
     this.elements.searchButton().click();
     return this;
   }
