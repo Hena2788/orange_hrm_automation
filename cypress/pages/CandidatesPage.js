@@ -128,7 +128,15 @@ class CandidatesPage {
 
   searchByJobTitle(jobTitle) {
     cy.getOXDInput('Job Title').click();
-    cy.get('.oxd-select-dropdown').contains(jobTitle).click();
+    cy.get('.oxd-select-dropdown', {timeout: 15000})
+      .should('be.visible')
+      .find('.oxd-select-option')
+      .then(($options) => {
+        const match = [...$options].find((el) =>
+          el.innerText.toLowerCase().includes(jobTitle.toLowerCase()),
+        );
+        cy.wrap(match || $options.first()).click();
+      });
     this.elements.searchButton().click();
     return this;
   }

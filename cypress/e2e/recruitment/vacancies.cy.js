@@ -4,6 +4,7 @@ import {
   uniqueSuffix,
   ensureJobTitleExists,
   resolveHiringManagerSearchTerm,
+  resolveJobTitle,
 } from '../../support/helpers';
 
 const vacancyTestData = Cypress.env('vacanciesData') || [];
@@ -20,11 +21,14 @@ describe('Recruitment Module - Vacancies', () => {
     loginAsAdmin();
     resolveHiringManagerSearchTerm();
 
-    if (!Cypress.env('useDemo')) {
+    cy.then(() => {
+      if (Cypress.env('useDemo')) {
+        return resolveJobTitle().then((title) => {
+          testJobTitle = title;
+        });
+      }
       ensureJobTitleExists(testJobTitle);
-    } else {
-      testJobTitle = 'Automaton Tester';
-    }
+    });
   });
 
   beforeEach(function () {

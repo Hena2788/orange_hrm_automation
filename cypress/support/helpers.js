@@ -36,33 +36,71 @@ export function ensureJobTitleExists(jobTitleName) {
   cy.wait('@createJobTitle');
 }
 
+function authenticatedRequest(options) {
+  return cy.getCookies().then((cookies) => {
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join('; ');
+    return cy
+      .request({
+        failOnStatusCode: false,
+        ...options,
+        headers: {
+          ...options.headers,
+          ...(cookieHeader ? {Cookie: cookieHeader} : {}),
+        },
+      })
+      .then((response) => {
+        if (response.status === 401) {
+          throw new Error(
+            `Unauthorized API call to ${options.url}. Run loginAsAdmin() first.`,
+          );
+        }
+        return response;
+      });
+  });
+}
+
+export function resolveJobTitle() {
+  return authenticatedRequest({
+    method: 'GET',
+    url: '/api/v2/admin/job-titles',
+    qs: {limit: 50},
+  }).then((response) => {
+    const titles = response.body?.data || [];
+    const active = titles.find((t) => t.title && !t.isDeleted) || titles[0];
+    const jobTitle = active?.title;
+
+    if (!jobTitle) {
+      throw new Error('No job titles found on the target environment');
+    }
+
+    Cypress.env('jobTitle', jobTitle);
+    return jobTitle;
+  });
+}
+
 export function resolveHiringManagerSearchTerm() {
-  return cy
-    .request({
-      method: 'GET',
-      url: '/api/v2/pim/employees',
-      qs: {
-        nameOrId: 'a',
-        includeEmployees: 'onlyCurrent',
-        limit: 20,
-      },
-    })
-    .then((response) => {
-      const employees = response.body?.data || [];
-      const employee =
-        employees.find((e) => !e.terminationId) || employees[0];
-      if (!employee) {
-        return 'Admin';
-      }
-      const searchTerm = employee.firstName;
-      Cypress.env('hiringManagerSearch', searchTerm);
-      Cypress.env(
-        'hiringManagerLabel',
-        `${employee.firstName} ${employee.middleName || ''} ${employee.lastName}`.replace(
-          /\s+/g,
-          ' ',
-        ).trim(),
-      );
-      return searchTerm;
-    });
+  return authenticatedRequest({
+    method: 'GET',
+    url: '/api/v2/pim/employees',
+    qs: {
+      nameOrId: 'a',
+      includeEmployees: 'onlyCurrent',
+      limit: 20,
+    },
+  }).then((response) => {
+    const employees = response.body?.data || [];
+    const employee = employees.find((e) => !e.terminationId) || employees[0];
+    if (!employee) {
+      return 'Admin';
+    }
+    const searchTerm = employee.firstName;
+    Cypress.env('hiringManagerSearch', searchTerm);
+    Cypress.env(
+      'hiringManagerLabel',
+      `${employee.firstName} ${employee.middleName || ''} ${employee.lastName}`
+        .replace(/\s+/g, ' ')
+        .trim(),
+    );
+    return searchTerm;
+  });
 }
