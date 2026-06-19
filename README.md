@@ -47,6 +47,8 @@ Override via environment variables or edit `cypress.config.js`:
 
 For local installs, run `php <orangehrm>/src/test/functional/tools/prepare.php` first.
 
+**Node.js:** Use Node 22+ locally (`.nvmrc` pins Node 24 for CI).
+
 ## CI/CD (GitHub Actions)
 
 Pipeline file: `.github/workflows/cypress-e2e.yml`
