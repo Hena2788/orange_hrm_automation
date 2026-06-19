@@ -1,8 +1,8 @@
 /**
- * Copy this file to cypress.config.js and adjust baseUrl for your environment.
+ * Cypress configuration — override via environment variables in CI/local.
  *
- * Demo:  https://opensource-demo.orangehrmlive.com/web/index.php
- * Local: http://localhost/orangehrm/web/index.php (or your Docker URL)
+ * CYPRESS_BASE_URL, CYPRESS_useDemo, CYPRESS_PROJECT_ID, CYPRESS_RECORD_KEY
+ * See README.md for CI/CD setup.
  */
 const {defineConfig} = require('cypress');
 
@@ -10,16 +10,19 @@ const axios = require('axios');
 const XLSX = require('xlsx');
 const path = require('path');
 
+const isCI = process.env.CI === 'true';
+
 module.exports = defineConfig({
   defaultCommandTimeout: 10000,
+  pageLoadTimeout: isCI ? 120000 : 60000,
   retries: {
-    runMode: 2,
+    runMode: isCI ? 2 : 2,
     openMode: 0,
   },
   video: true,
   screenshotOnRunFailure: true,
   scrollBehavior: 'top',
-  projectId: 'YOUR_CYPRESS_CLOUD_PROJECT_ID',
+  projectId: process.env.CYPRESS_PROJECT_ID || '83eznf',
   reporter: 'cypress-mochawesome-reporter',
   reporterOptions: {
     reportDir: 'cypress/reports',
@@ -30,13 +33,19 @@ module.exports = defineConfig({
     saveAllAttempts: false,
   },
   env: {
-    useDemo: true,
-    adminUsername: 'Admin',
-    adminPassword: 'admin123',
+    useDemo:
+      process.env.CYPRESS_useDemo !== undefined
+        ? process.env.CYPRESS_useDemo === 'true'
+        : true,
+    adminUsername: process.env.CYPRESS_adminUsername || 'Admin',
+    adminPassword: process.env.CYPRESS_adminPassword || 'admin123',
     invalidLoginMessage: 'Invalid credentials',
+    hiringManagerSearch: 'manda',
   },
   e2e: {
-    baseUrl: 'https://opensource-demo.orangehrmlive.com/web/index.php',
+    baseUrl:
+      process.env.CYPRESS_BASE_URL ||
+      'https://opensource-demo.orangehrmlive.com/web/index.php',
     supportFile: 'cypress/support/e2e.js',
     specPattern: 'cypress/e2e/**/*.cy.js',
     setupNodeEvents(on, config) {
@@ -140,7 +149,7 @@ function loadExcelFixtures(config) {
       config.env[name] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
     } catch (err) {
       console.warn(
-        `Could not load ${name}.xlsx — run: node scripts/generate-test-data.js`,
+        `Could not load ${name}.xlsx — run: npm run generate-data`,
       );
       config.env[name] = [];
     }

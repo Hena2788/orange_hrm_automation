@@ -2,6 +2,9 @@
   "name": "organhrm-automation",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "generate-data": "node scripts/generate-test-data.js",
     "pretest": "node scripts/generate-test-data.js",
@@ -10,10 +13,13 @@
     "test:login": "cypress run --spec 'cypress/e2e/login/**/*.cy.js'",
     "test:recruitment": "cypress run --spec 'cypress/e2e/recruitment/**/*.cy.js'",
     "test:report": "cypress run --spec 'cypress/e2e/login/**/*.cy.js,cypress/e2e/recruitment/**/*.cy.js'",
-    "test:cloud": "cypress run --record --key $CYPRESS_RECORD_KEY --spec 'cypress/e2e/login/**/*.cy.js,cypress/e2e/recruitment/**/*.cy.js'",
+    "test:cloud": "cypress run --record --spec 'cypress/e2e/login/**/*.cy.js,cypress/e2e/recruitment/**/*.cy.js'",
+    "ci": "npm run generate-data && npm test",
+    "ci:login": "npm run generate-data && npm run test:login",
+    "ci:recruitment": "npm run generate-data && npm run test:recruitment",
     "open": "cypress open -e runner=interactive",
     "format": "prettier . --write",
-    "lint": "eslint . --ext .js,.ts, --max-warnings=0"
+    "lint": "eslint cypress scripts --ext .js --max-warnings=0"
   },
   "devDependencies": {
     "axios": "~1.13.1",
@@ -26,6 +32,5 @@
     "eslint-plugin-prettier": "^5.1.3",
     "prettier": "^3.2.5",
     "xlsx": "^0.18.5"
-  },
-  "packageManager": "yarn@4.1.0"
+  }
 }

@@ -6,60 +6,76 @@ Standalone Cypress project for automating **Login** and **Recruitment** (Candida
 
 ```
 OrganHRM_Automation/
-├── cypress.config.js              # Local config (create from example)
-├── cypress.config.example.js
+├── .github/workflows/cypress-e2e.yml   # CI/CD pipeline
+├── cypress.config.js                   # Cypress config (env overrides for CI)
 ├── cypress/
-│   ├── e2e/
-│   │   ├── login/login.cy.js
-│   │   └── recruitment/
-│   │       ├── candidates.cy.js
-│   │       └── vacancies.cy.js
-│   ├── fixtures/data/             # Excel test data
-│   ├── pages/                     # Page Object Model
+│   ├── e2e/login/
+│   ├── e2e/recruitment/
+│   ├── fixtures/data/                  # Excel test data
+│   ├── pages/                          # Page Object Model
 │   └── support/
-│       ├── e2e.js                 # Global hooks
-│       ├── commands.js
-│       ├── helpers.js
-│       └── oxd.js
 └── scripts/generate-test-data.js
 ```
 
-## Setup
+## Local Setup
 
 ```bash
-cd C:\Users\QA-BinaryCosmo\OrganHRM_Automation
+cd OrganHRM_Automation
 npm install
-cp cypress.config.example.js cypress.config.js
 npm run generate-data
+npm test
 ```
 
-### Target application
-
-Edit `cypress.config.js`:
-
-| Environment | baseUrl | useDemo |
-|-------------|---------|---------|
-| Hosted demo | `https://opensource-demo.orangehrmlive.com/web/index.php` | `true` |
-| Local OrangeHRM | Your local URL (e.g. `http://localhost/orangehrm/web/index.php`) | `false` |
-
-For local installs, run `php <orangehrm>/src/test/functional/tools/prepare.php` in the OrangeHRM repo first.
-
-## Run Tests
-
-```bash
-npm test              # all E2E tests
-npm run test:login    # login only
-npm run test:recruitment
-npm run open          # Cypress interactive runner
-```
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run all 20 E2E tests |
+| `npm run test:login` | Login module only |
+| `npm run test:recruitment` | Recruitment module only |
+| `npm run open` | Cypress interactive runner |
+| `npm run lint` | ESLint on cypress/ and scripts/ |
 
 **HTML report:** `cypress/reports/index.html`
 
-## Cypress Cloud
+### Target application
 
-1. Create a project at [cloud.cypress.io](https://cloud.cypress.io)
-2. Set `projectId` in `cypress.config.js`
-3. Run: `set CYPRESS_RECORD_KEY=your_key && npm run test:cloud`
+Override via environment variables or edit `cypress.config.js`:
+
+| Environment | `CYPRESS_BASE_URL` | `CYPRESS_useDemo` |
+|-------------|-------------------|-------------------|
+| Hosted demo (default) | `https://opensource-demo.orangehrmlive.com/web/index.php` | `true` |
+| Local OrangeHRM | Your local URL | `false` |
+
+For local installs, run `php <orangehrm>/src/test/functional/tools/prepare.php` first.
+
+## CI/CD (GitHub Actions)
+
+Pipeline file: `.github/workflows/cypress-e2e.yml`
+
+### Triggers
+
+- Push / pull request to `main`, `master`, or `develop`
+- Nightly schedule (02:00 UTC)
+- Manual run (`workflow_dispatch`)
+
+### Pipeline stages
+
+1. **Lint** — ESLint on test code
+2. **Cypress (parallel)** — Login and Recruitment run in separate jobs
+3. **Artifacts** — Mochawesome reports, screenshots (on failure), videos
+
+### GitHub secrets (optional — Cypress Cloud)
+
+| Secret | Purpose |
+|--------|---------|
+| `CYPRESS_RECORD_KEY` | Record runs to [Cypress Cloud](https://cloud.cypress.io) |
+
+When `CYPRESS_RECORD_KEY` is set, the workflow automatically records results. Project ID is in `cypress.config.js` (`CYPRESS_PROJECT_ID` override supported).
+
+### Branch protection (recommended)
+
+GitHub → Settings → Branches → Add rule:
+
+- Require status checks: `Lint`, `E2E — Login`, `E2E — Recruitment`
 
 ## Features
 
@@ -67,3 +83,4 @@ npm run open          # Cypress interactive runner
 - Data-driven testing with Excel files
 - Cypress hooks (`before`, `beforeEach`, `after`, `afterEach`)
 - Test retries and Mochawesome HTML reporting
+- CI/CD with parallel jobs, caching, and artifact uploads
